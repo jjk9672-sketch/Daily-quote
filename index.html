@@ -1,1 +1,632 @@
-# Daily-quote
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="每日一句">
+<title>每日一句</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=Noto+Sans+TC:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --surface: #1a1a2e;
+    --card: #16213e;
+    --accent-pos: #f0c040;
+    --accent-neg: #8b5cf6;
+    --text: #e8e8f0;
+    --muted: #6b7280;
+    --border: rgba(255,255,255,0.07);
+    --radius: 20px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* Background ambient */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -40%;
+    right: -20%;
+    width: 70vw;
+    height: 70vw;
+    background: radial-gradient(circle, rgba(240,192,64,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -30%;
+    left: -20%;
+    width: 60vw;
+    height: 60vw;
+    background: radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 20px 40px;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+  }
+
+  /* Header */
+  header {
+    padding: 52px 0 24px;
+    text-align: center;
+  }
+  .header-date {
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .header-title {
+    font-family: 'Noto Serif TC', serif;
+    font-weight: 900;
+    font-size: 26px;
+    letter-spacing: 0.05em;
+    background: linear-gradient(135deg, #f0c040, #e8a820);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Daily Card */
+  .daily-section { margin-bottom: 28px; }
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding-left: 4px;
+  }
+
+  .quote-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+  }
+  .quote-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    border-radius: 4px 0 0 4px;
+  }
+  .quote-card.positive::before { background: var(--accent-pos); }
+  .quote-card.negative::before { background: var(--accent-neg); }
+
+  .quote-mark {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 72px;
+    line-height: 0.5;
+    position: absolute;
+    top: 28px; right: 24px;
+    opacity: 0.06;
+    font-weight: 900;
+    pointer-events: none;
+  }
+
+  .quote-text {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 20px;
+    line-height: 1.75;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-right: 8px;
+  }
+
+  .quote-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .quote-author {
+    font-size: 13px;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .quote-vibe {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+  }
+  .quote-vibe.positive {
+    background: rgba(240,192,64,0.12);
+    color: var(--accent-pos);
+  }
+  .quote-vibe.negative {
+    background: rgba(139,92,246,0.15);
+    color: #a78bfa;
+  }
+
+  /* Fade animation */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in { animation: fadeIn 0.45s ease forwards; }
+
+  /* Buttons */
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%;
+    padding: 15px 20px;
+    border: none; border-radius: 14px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    letter-spacing: 0.03em;
+  }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-random {
+    background: linear-gradient(135deg, rgba(240,192,64,0.15), rgba(240,192,64,0.08));
+    color: var(--accent-pos);
+    border: 1px solid rgba(240,192,64,0.25);
+    margin-bottom: 12px;
+  }
+  .btn-random:hover { background: linear-gradient(135deg, rgba(240,192,64,0.22), rgba(240,192,64,0.12)); }
+
+  .btn-add {
+    background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(139,92,246,0.08));
+    color: #a78bfa;
+    border: 1px solid rgba(139,92,246,0.25);
+  }
+  .btn-add:hover { background: linear-gradient(135deg, rgba(139,92,246,0.22), rgba(139,92,246,0.12)); }
+
+  /* Icon spin */
+  @keyframes spin1 { to { transform: rotate(360deg); } }
+  .spinning { animation: spin1 0.5s ease; }
+
+  /* Add form */
+  .add-form {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-top: 16px;
+    display: none;
+  }
+  .add-form.open { display: block; animation: fadeIn 0.3s ease; }
+  .add-form label {
+    display: block;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .add-form textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 12px 14px;
+    resize: none;
+    outline: none;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
+  }
+  .add-form textarea:focus { border-color: rgba(139,92,246,0.5); }
+  .add-form textarea::placeholder { color: var(--muted); }
+
+  .form-row {
+    display: flex; gap: 10px; margin-bottom: 14px;
+  }
+  .form-row input {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-row input:focus { border-color: rgba(139,92,246,0.5); }
+  .form-row input::placeholder { color: var(--muted); }
+
+  .vibe-selector {
+    display: flex; gap: 8px; margin-bottom: 18px;
+  }
+  .vibe-btn {
+    flex: 1; padding: 9px;
+    border-radius: 10px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px; cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .vibe-btn.active-pos { background: rgba(240,192,64,0.15); color: var(--accent-pos); border-color: rgba(240,192,64,0.3); }
+  .vibe-btn.active-neg { background: rgba(139,92,246,0.15); color: #a78bfa; border-color: rgba(139,92,246,0.3); }
+
+  .form-actions { display: flex; gap: 10px; }
+  .btn-save {
+    flex: 2; padding: 13px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.8), rgba(109,62,216,0.8));
+    color: white; border: none; border-radius: 12px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 14px; cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-save:active { transform: scale(0.97); }
+  .btn-cancel {
+    flex: 1; padding: 13px;
+    background: rgba(255,255,255,0.05);
+    color: var(--muted); border: 1px solid var(--border); border-radius: 12px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 14px; cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-cancel:active { transform: scale(0.97); }
+
+  /* User quotes list */
+  .user-section { margin-top: 32px; }
+  .user-quotes-list { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+  .user-quote-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex; align-items: flex-start; gap: 14px;
+    position: relative;
+    animation: fadeIn 0.3s ease;
+  }
+  .user-quote-item .item-bar {
+    width: 3px; min-height: 100%;
+    border-radius: 3px;
+    flex-shrink: 0;
+    align-self: stretch;
+  }
+  .item-bar.positive { background: var(--accent-pos); }
+  .item-bar.negative { background: var(--accent-neg); }
+
+  .item-content { flex: 1; min-width: 0; }
+  .item-text {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 15px; line-height: 1.65;
+    margin-bottom: 6px;
+    word-break: break-all;
+  }
+  .item-author {
+    font-size: 12px; color: var(--muted); font-style: italic;
+  }
+
+  .btn-delete {
+    background: transparent; border: none;
+    color: var(--muted); cursor: pointer;
+    padding: 4px; border-radius: 8px;
+    font-size: 16px; line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.15s, background 0.15s;
+  }
+  .btn-delete:hover { color: #f87171; background: rgba(248,113,113,0.1); }
+
+  .empty-state {
+    text-align: center; padding: 24px;
+    color: var(--muted); font-size: 14px;
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+  }
+
+  /* Divider */
+  .divider {
+    height: 1px; background: var(--border);
+    margin: 32px 0;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(30,30,50,0.95);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: 30px;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-date" id="headerDate"></div>
+    <div class="header-title">每日一句</div>
+  </header>
+
+  <!-- Today's Quote -->
+  <section class="daily-section">
+    <div class="section-label">✦ 今日語錄</div>
+    <div class="quote-card" id="todayCard">
+      <div class="quote-mark">"</div>
+      <div class="quote-text" id="todayText"></div>
+      <div class="quote-meta">
+        <div class="quote-author" id="todayAuthor"></div>
+        <div class="quote-vibe" id="todayVibe"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Random -->
+  <button class="btn btn-random" id="btnRandom" onclick="drawRandom()">
+    <span id="randomIcon">⟳</span> 再抽一句
+  </button>
+
+  <!-- Random result -->
+  <div id="randomSection" style="margin-bottom: 28px; display:none;">
+    <div class="section-label">↳ 抽到了</div>
+    <div class="quote-card" id="randomCard">
+      <div class="quote-mark">"</div>
+      <div class="quote-text" id="randomText"></div>
+      <div class="quote-meta">
+        <div class="quote-author" id="randomAuthor"></div>
+        <div class="quote-vibe" id="randomVibe"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Add Quote -->
+  <button class="btn btn-add" onclick="toggleForm()">
+    <span>＋</span> 新增我的句子
+  </button>
+
+  <div class="add-form" id="addForm">
+    <label>句子內容</label>
+    <textarea id="inputText" rows="3" placeholder="寫下你想記住的一句話…"></textarea>
+    <label>作者／來源（選填）</label>
+    <div class="form-row">
+      <input type="text" id="inputAuthor" placeholder="例：村上春樹、自己想的">
+    </div>
+    <div class="vibe-selector">
+      <button class="vibe-btn active-pos" id="vibePos" onclick="setVibe('positive')">☀ 正能量</button>
+      <button class="vibe-btn" id="vibeNeg" onclick="setVibe('negative')">🌙 負能量</button>
+    </div>
+    <div class="form-actions">
+      <button class="btn-save" onclick="saveQuote()">儲存</button>
+      <button class="btn-cancel" onclick="toggleForm()">取消</button>
+    </div>
+  </div>
+
+  <!-- User Quotes -->
+  <section class="user-section">
+    <div class="section-label">我的收藏</div>
+    <div class="user-quotes-list" id="userList"></div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Built-in quotes ──────────────────────────────────────────────
+const BUILT_IN = [
+  // Positive (8)
+  { text: "每一個清晨都是嶄新的開始，昨天的失敗不能定義今天的你。", author: "無名", vibe: "positive" },
+  { text: "你不需要看到整段階梯，只需要踏出第一步。", author: "馬丁·路德·金恩", vibe: "positive" },
+  { text: "即使走得很慢，只要不停下腳步，就一定能抵達目的地。", author: "孔子", vibe: "positive" },
+  { text: "生命中最重要的不是你握了什麼牌，而是你怎麼打這副牌。", author: "無名", vibe: "positive" },
+  { text: "種一棵樹最好的時間是十年前，其次是現在。", author: "中國諺語", vibe: "positive" },
+  { text: "你能想像，你就能實現。你能夢見，你就能成為。", author: "威廉·亞瑟·沃德", vibe: "positive" },
+  { text: "困難是進步的提示，每次跌倒都讓你更知道路在哪裡。", author: "無名", vibe: "positive" },
+  { text: "不是因為有希望才堅持，而是因為堅持才看到了希望。", author: "無名", vibe: "positive" },
+  // Negative / dark (7)
+  { text: "人生大多數的煩惱，來自於無法獨處。", author: "帕斯卡", vibe: "negative" },
+  { text: "我們所有的不幸，都來自我們無法孤獨地待在自己的房間裡。", author: "帕斯卡", vibe: "negative" },
+  { text: "人生就是一場緩慢的崩潰，我們只是試著讓自己撐得久一點。", author: "無名", vibe: "negative" },
+  { text: "世界不在乎你的自尊，它期待你在自我感覺良好之前先做出成績。", author: "比爾·蓋茲", vibe: "negative" },
+  { text: "你以為自己在堅持夢想，其實可能只是不願承認自己錯了。", author: "無名", vibe: "negative" },
+  { text: "成熟就是學會接受：有些人不愛你，有些事不如意，而這才是常態。", author: "無名", vibe: "negative" },
+  { text: "人終究是孤獨的，所有的陪伴都只是暫時的緩解。", author: "叔本華", vibe: "negative" },
+];
+
+// ── State ────────────────────────────────────────────────────────
+let selectedVibe = 'positive';
+let userQuotes = [];
+
+// ── Init ─────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  setDate();
+  loadUserQuotes();
+  showTodayQuote();
+  renderUserList();
+});
+
+function setDate() {
+  const d = new Date();
+  const days = ['日','一','二','三','四','五','六'];
+  const s = `${d.getFullYear()} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日　星期${days[d.getDay()]}`;
+  document.getElementById('headerDate').textContent = s;
+}
+
+// ── Today's quote: deterministic per day ────────────────────────
+function showTodayQuote() {
+  const all = [...BUILT_IN, ...userQuotes];
+  const d = new Date();
+  const seed = d.getFullYear() * 10000 + (d.getMonth()+1) * 100 + d.getDate();
+  const idx = seed % all.length;
+  renderCard(all[idx], 'todayCard', 'todayText', 'todayAuthor', 'todayVibe');
+}
+
+function renderCard(q, cardId, textId, authorId, vibeId) {
+  const card = document.getElementById(cardId);
+  const textEl = document.getElementById(textId);
+  const authorEl = document.getElementById(authorId);
+  const vibeEl = document.getElementById(vibeId);
+
+  textEl.textContent = q.text;
+  authorEl.textContent = q.author ? `— ${q.author}` : '';
+  vibeEl.textContent = q.vibe === 'positive' ? '正能量' : '負能量';
+  vibeEl.className = `quote-vibe ${q.vibe}`;
+  card.className = `quote-card ${q.vibe} fade-in`;
+
+  // re-trigger animation
+  card.classList.remove('fade-in');
+  void card.offsetWidth;
+  card.classList.add('fade-in');
+}
+
+// ── Random draw ──────────────────────────────────────────────────
+function drawRandom() {
+  const all = [...BUILT_IN, ...userQuotes];
+  const idx = Math.floor(Math.random() * all.length);
+  const q = all[idx];
+
+  const section = document.getElementById('randomSection');
+  section.style.display = 'block';
+  renderCard(q, 'randomCard', 'randomText', 'randomAuthor', 'randomVibe');
+
+  // spin icon
+  const icon = document.getElementById('randomIcon');
+  icon.classList.remove('spinning');
+  void icon.offsetWidth;
+  icon.classList.add('spinning');
+  setTimeout(() => icon.classList.remove('spinning'), 500);
+}
+
+// ── Form ─────────────────────────────────────────────────────────
+function toggleForm() {
+  const form = document.getElementById('addForm');
+  form.classList.toggle('open');
+  if (form.classList.contains('open')) {
+    document.getElementById('inputText').focus();
+    setVibe('positive');
+  } else {
+    clearForm();
+  }
+}
+
+function setVibe(v) {
+  selectedVibe = v;
+  document.getElementById('vibePos').className = 'vibe-btn' + (v === 'positive' ? ' active-pos' : '');
+  document.getElementById('vibeNeg').className = 'vibe-btn' + (v === 'negative' ? ' active-neg' : '');
+}
+
+function clearForm() {
+  document.getElementById('inputText').value = '';
+  document.getElementById('inputAuthor').value = '';
+  setVibe('positive');
+}
+
+function saveQuote() {
+  const text = document.getElementById('inputText').value.trim();
+  if (!text) { showToast('請輸入句子內容'); return; }
+  const author = document.getElementById('inputAuthor').value.trim() || '自己';
+  const q = { id: Date.now(), text, author, vibe: selectedVibe };
+  userQuotes.unshift(q);
+  persistUserQuotes();
+  renderUserList();
+  toggleForm();
+  clearForm();
+  showToast('已儲存 ✓');
+}
+
+// ── User list ────────────────────────────────────────────────────
+function renderUserList() {
+  const list = document.getElementById('userList');
+  if (userQuotes.length === 0) {
+    list.innerHTML = '<div class="empty-state">還沒有收藏的句子<br>加一句屬於你的吧 ↑</div>';
+    return;
+  }
+  list.innerHTML = userQuotes.map(q => `
+    <div class="user-quote-item">
+      <div class="item-bar ${q.vibe}"></div>
+      <div class="item-content">
+        <div class="item-text">${escHtml(q.text)}</div>
+        <div class="item-author">— ${escHtml(q.author)}</div>
+      </div>
+      <button class="btn-delete" onclick="deleteQuote(${q.id})" title="刪除">✕</button>
+    </div>
+  `).join('');
+}
+
+function deleteQuote(id) {
+  userQuotes = userQuotes.filter(q => q.id !== id);
+  persistUserQuotes();
+  renderUserList();
+  showToast('已刪除');
+}
+
+// ── Storage ──────────────────────────────────────────────────────
+function loadUserQuotes() {
+  try {
+    const raw = localStorage.getItem('daily_quote_user');
+    userQuotes = raw ? JSON.parse(raw) : [];
+  } catch(e) { userQuotes = []; }
+}
+function persistUserQuotes() {
+  try { localStorage.setItem('daily_quote_user', JSON.stringify(userQuotes)); } catch(e) {}
+}
+
+// ── Toast ────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── Util ─────────────────────────────────────────────────────────
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
